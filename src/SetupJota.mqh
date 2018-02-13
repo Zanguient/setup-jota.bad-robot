@@ -54,12 +54,12 @@ class SetupJota : public BadRobot
       
       void Load()
    	{
-			_eMALongHandle = iMA(GetSymbol(), GetPeriod(), _eMALongPeriod, 0, MODE_EMA, PRICE_CLOSE);
-			_eMAShortHandle = iMA(GetSymbol(), GetPeriod(), _eMAShortPeriod, 0, MODE_EMA, PRICE_CLOSE);
-	
-			if (_eMALongHandle < 0 || _eMAShortHandle < 0) {
-				Alert("Erro ao criar indicadores: erro ", GetLastError(), "!");
-			}   	
+				_eMALongHandle = iMA(GetSymbol(), GetPeriod(), _eMALongPeriod, 0, MODE_EMA, PRICE_CLOSE);
+				_eMAShortHandle = iMA(GetSymbol(), GetPeriod(), _eMAShortPeriod, 0, MODE_EMA, PRICE_CLOSE);
+				
+				if (_eMALongHandle < 0 || _eMAShortHandle < 0) {
+					Alert("Erro ao criar indicadores: erro ", GetLastError(), "!");
+				}   	
    	};
    
    	void Execute() {
