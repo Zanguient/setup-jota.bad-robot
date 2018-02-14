@@ -34,13 +34,34 @@ class SetupJota : public BadRobot
 			ArraySetAsSeries(_eMAShortValues, true);
 			ArraySetAsSeries(_rates, true);
 	
-			int copiedMALongBuffer = CopyBuffer(_eMALongHandle, 0, 0, 5, _eMALongValues);
-			int copiedMAShortBuffer = CopyBuffer(_eMAShortHandle, 0, 0, 5, _eMAShortValues);
+			int copiedMALongBuffer = CopyBuffer(_eMALongHandle, 0, 0, 50, _eMALongValues);
+			int copiedMAShortBuffer = CopyBuffer(_eMAShortHandle, 0, 0, 50, _eMAShortValues);
 			int copiedRates = CopyRates(GetSymbol(), GetPeriod(), 0, 50, _rates);
 	
 			return copiedRates > 0 && copiedMALongBuffer > 0 && copiedMAShortBuffer > 0;
 	
-		}		   
+		}		
+		
+		bool FindBuy(){
+		
+			bool hasCondition = true;
+		
+			for(int i = 0; i < ArraySize(_rates); i++){
+				
+				if(_rates[i].low < _eMALongValues[i]){
+					hasCondition = false;
+					break;
+				}
+							
+			}
+			
+			if(!hasCondition) return false;
+			
+			//TODO
+			
+			return hasCondition;
+		
+		}   
    
       public:
       
