@@ -15,6 +15,9 @@ class SetupJota : public BadRobot
       private:
    
       MqlRates _rates[];
+      bool _wait;
+      double _maxima;
+      double _minima;
       
 		//Indicadores
 		int _eMALongPeriod;
@@ -40,12 +43,16 @@ class SetupJota : public BadRobot
 	
 			return copiedRates > 0 && copiedMALongBuffer > 0 && copiedMAShortBuffer > 0;
 	
+		}
+		
+		bool Find(){
+			return FindBuy() || FindSell();		
 		}		
 		
 		bool FindBuy(){
 		
 			bool hasCondition = true;
-		
+			
 			for(int i = 0; i < ArraySize(_rates); i++){
 				
 				if(_rates[i].low < _eMALongValues[i]){
@@ -55,43 +62,69 @@ class SetupJota : public BadRobot
 							
 			}
 			
-			if(!hasCondition) return false;
-			
-			//TODO
+			_maxima = _rates[0].high;
 			
 			return hasCondition;
 		
-		}   
+		} 
+		
+		bool FindSell(){
+			return false;
+		}  
    
-      public:
-      
+		public:
+		
 		void SetEMALongPeriod(int ema) {
 			_eMALongPeriod = ema;
 		};
-	
+		
 		void SetEMAShortPeriod(int ema) {
 			_eMAShortPeriod = ema;
 		};            
       
       void Load()
    	{
-				_eMALongHandle = iMA(GetSymbol(), GetPeriod(), _eMALongPeriod, 0, MODE_EMA, PRICE_CLOSE);
-				_eMAShortHandle = iMA(GetSymbol(), GetPeriod(), _eMAShortPeriod, 0, MODE_EMA, PRICE_CLOSE);
-				
-				if (_eMALongHandle < 0 || _eMAShortHandle < 0) {
-					Alert("Erro ao criar indicadores: erro ", GetLastError(), "!");
-				}   	
+			_eMALongHandle = iMA(GetSymbol(), GetPeriod(), _eMALongPeriod, 0, MODE_EMA, PRICE_CLOSE);
+			_eMAShortHandle = iMA(GetSymbol(), GetPeriod(), _eMAShortPeriod, 0, MODE_EMA, PRICE_CLOSE);
+			
+			if (_eMALongHandle < 0 || _eMAShortHandle < 0) {
+				Alert("Erro ao criar indicadores: erro ", GetLastError(), "!");
+			}   	
    	};
    
    	void Execute() {
    	
-            if(!BadRobot::ExecuteBase()) return;
+			if(!BadRobot::ExecuteBase()) return;
+			
+			if(GetBuffers()){ 
+			
+				if(_wait || Find()){	   		   
+				
+	   		      _wait = true;
+	   		      
+						if(_eMAShortValues[0] > _eMALongValues[0]){
+      		         		      		   
+	      		      double _entrada = _maxima + GetSpread();
+	         			double _auxStopGain = NormalizeDouble((_entrada + GetStopGain()), _Digits);
+	         			double _auxStopLoss = NormalizeDouble((_entrada - GetStopLoss()), _Digits);
+	              
+	         			if (GetPrice().last >= _entrada && !HasPositionOpen()) {         
+	         			   _wait = false;
+	         				Buy(_entrada, _auxStopLoss, _auxStopGain, getRobotName());           				          
+	         			}             		     		
+         			
+      		   	}
+
+				} 
+				
+			}  		
+			
    		   
    	};
    	
       void ExecuteOnTrade(){
       
-            BadRobot::ExecuteOnTradeBase();
+			BadRobot::ExecuteOnTradeBase();
          
       };
 };
