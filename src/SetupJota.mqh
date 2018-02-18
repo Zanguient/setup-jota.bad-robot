@@ -37,9 +37,9 @@ class SetupJota : public BadRobot
 			ArraySetAsSeries(_eMAShortValues, true);
 			ArraySetAsSeries(_rates, true);
 	
-			int copiedMALongBuffer = CopyBuffer(_eMALongHandle, 0, 0, 50, _eMALongValues);
-			int copiedMAShortBuffer = CopyBuffer(_eMAShortHandle, 0, 0, 50, _eMAShortValues);
-			int copiedRates = CopyRates(GetSymbol(), GetPeriod(), 0, 50, _rates);
+			int copiedMALongBuffer = CopyBuffer(_eMALongHandle, 0, 0, 10, _eMALongValues);
+			int copiedMAShortBuffer = CopyBuffer(_eMAShortHandle, 0, 0, 10, _eMAShortValues);
+			int copiedRates = CopyRates(GetSymbol(), GetPeriod(), 0, 10, _rates);
 	
 			return copiedRates > 0 && copiedMALongBuffer > 0 && copiedMAShortBuffer > 0;
 	
@@ -50,7 +50,7 @@ class SetupJota : public BadRobot
 		}		
 		
 		bool FindBuy(){
-		
+				
 			bool hasCondition = true;
 			
 			for(int i = 0; i < ArraySize(_rates); i++){
@@ -62,6 +62,12 @@ class SetupJota : public BadRobot
 							
 			}
 			
+			if(!hasCondition) return false;
+			
+			hasCondition = hasCondition && _rates[0].low > _eMALongValues[0];
+			hasCondition = hasCondition && _rates[0].high < _eMALongValues[0] + 80; //Tolerancia
+			hasCondition = hasCondition && _rates[0].high > _eMAShortValues[0]; //Fechamento acima da media curta
+			
 			_maxima = _rates[0].high;
 			
 			return hasCondition;
@@ -69,7 +75,29 @@ class SetupJota : public BadRobot
 		} 
 		
 		bool FindSell(){
-			return false;
+			
+			bool hasCondition = true;
+			
+			for(int i = 0; i < ArraySize(_rates); i++){
+				
+				if(_rates[i].high > _eMALongValues[i]){
+					hasCondition = false;
+					break;
+				}
+							
+			}
+			
+			if(!hasCondition) return false;
+			
+			hasCondition = hasCondition && _rates[0].high < _eMALongValues[0];
+			hasCondition = hasCondition && _rates[0].low < _eMALongValues[0] - 80; //Tolerancia
+			hasCondition = hasCondition && _rates[0].low < _eMAShortValues[0]; //Fechamento abaixo da media curta
+			
+			_minima = _rates[0].low;
+			
+			return hasCondition;
+			
+			
 		}  
    
 		public:
@@ -102,13 +130,30 @@ class SetupJota : public BadRobot
 				
 	   		      _wait = true;
 	   		      
-						if(_eMAShortValues[0] > _eMALongValues[0]){
+						if(GetPrice().last > _eMALongValues[0]){
+						
+							if(GetPrice().last < _eMAShortValues[0]) return;
       		         		      		   
 	      		      double _entrada = _maxima + GetSpread();
 	         			double _auxStopGain = NormalizeDouble((_entrada + GetStopGain()), _Digits);
 	         			double _auxStopLoss = NormalizeDouble((_entrada - GetStopLoss()), _Digits);
 	              
 	         			if (GetPrice().last >= _entrada && !HasPositionOpen()) {         
+	         			   _wait = false;
+	         				Buy(_entrada, _auxStopLoss, _auxStopGain, getRobotName());           				          
+	         			}             		     		
+         			
+      		   	}
+      		   	
+						if(GetPrice().last < _eMALongValues[0]){
+						
+							if(GetPrice().last > _eMAShortValues[0]) return;
+      		         		      		   
+	      		      double _entrada = _minima + GetSpread();
+	         			double _auxStopGain = NormalizeDouble((_entrada - GetStopGain()), _Digits);
+	         			double _auxStopLoss = NormalizeDouble((_entrada + GetStopLoss()), _Digits);
+	              
+	         			if (GetPrice().last <= _entrada && !HasPositionOpen()) {         
 	         			   _wait = false;
 	         				Buy(_entrada, _auxStopLoss, _auxStopGain, getRobotName());           				          
 	         			}             		     		
